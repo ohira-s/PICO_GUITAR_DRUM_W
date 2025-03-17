@@ -75,6 +75,8 @@
 # Needs PICO2W after here.
 #     2.0.0: 03/14/2025
 #            Web server is available to edit guitar score files and list.
+#     2.0.1: 03/17/2025
+#            Write json files as edited text format in web responses.
 #########################################################################
 
 import asyncio
@@ -878,9 +880,7 @@ class Guitar_class:
         self._music = []
         self._music_num = -1
         self._music_list = []
-        with open('SYNTH/MUSIC/list.json', 'r') as f:
-            self._music_list = json.load(f)
-
+        self.get_music_files_list()
 #        print(self._music_list)
 
         # Drums (0..5 correnspond to 6-strings)
@@ -968,6 +968,10 @@ class Guitar_class:
     def setup_music(self):
         display.fill(0)
         self.show_info_music(self.PARAM_ALL, 1)
+
+    def get_music_files_list(self):
+        with open('SYNTH/MUSIC/list.json', 'r') as f:
+            self._music_list = json.load(f)
 
     def midi_channel(self, channel=None):
         if channel is not None:
@@ -1131,6 +1135,7 @@ class Guitar_class:
         return (lyric, score)
 
     def music_file(self, file_num=None):
+        self.get_music_files_list()
         if file_num is None or len(self._music_list) <= 0:
             return self._music_num
 
@@ -1694,18 +1699,24 @@ class Guitar_class:
         return files
                 
 
-    def get_score_file_data(self, score_file_name):
-        with open('SYNTH/MUSIC/' + score_file_name, 'r') as f:
-            js = json.load(f)
+    def get_score_file_data(self, score_file_name, *, get_as_text = False):
+        try:
+            with open('SYNTH/MUSIC/' + score_file_name, 'r') as f:
+                return f.read() if get_as_text else json.load(f)
+                js = json.load(f)
         
-        return js
-                
+        except:
+            return '' if get_as_text else []
 
-    def get_score_files_list(self):
-        with open('SYNTH/MUSIC/list.json', 'r') as f:
-            js = json.load(f)
+
+    def get_score_files_list(self, *, get_as_text = False):
+        try:
+            with open('SYNTH/MUSIC/list.json', 'r') as f:
+                return f.read() if get_as_text else json.load(f)
+                js = json.load(f)
         
-        return js
+        except:
+            return '' if get_as_text else []
 
 ################# End of Guitar Class Definition #################
  
@@ -1932,16 +1943,17 @@ if __name__=='__main__':
 
         try:
             score_files = instrument_guitar.get_score_files(['NEW'])               
-            score_list = instrument_guitar.get_score_files_list()
+            score_list = instrument_guitar.get_score_files_list(get_as_text = True)
         
         except:
             score_files = []
-            score_list = []
+            score_list = ''
             status_message = 'ERROR: Music list load error.'
 
         html = html.replace('<REPL_g_score_file_selected/>', 'NEW')
         html = html.replace('<REPL_g_score_file_options/>', WIFI_WebServer_class.html_options(score_files))
-        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
+#        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
+        html = html.replace('<REPL_g_score_list/>', score_list)
         html = html.replace('<REPL_error_message/>', status_message)
         return Response(request, html, content_type="text/html")
     
@@ -1972,15 +1984,15 @@ if __name__=='__main__':
 
                 if file_name != 'NEW':
                     score_files = instrument_guitar.get_score_files([file_name])               
-                    score_data = instrument_guitar.get_score_file_data(file_name)
-                    score_list = instrument_guitar.get_score_files_list()
+                    score_data = instrument_guitar.get_score_file_data(file_name, get_as_text = True)
+                    score_list = instrument_guitar.get_score_files_list(get_as_text = True)
 
         except Exception as e:
             print('EXCEPT:', e)
             repl_error_message = repl_error_message.replace('<REPL_MESSAGE/>', status_message)
             score_files = []
-            score_data = []
-            score_list = []
+            score_data = ''
+            score_list = ''
             status_message = 'ERROR: Music score download error.'
 
         status_message = ''
@@ -1988,8 +2000,10 @@ if __name__=='__main__':
         html = html.replace('<REPL_g_score_file_selected/>', file_name)
         html = html.replace('<REPL_g_score_file_options/>', WIFI_WebServer_class.html_options(score_files))
         html = html.replace('<REPL_g_score_file/>', file_name)
-        html = html.replace('<REPL_g_score_data/>', json.dumps(score_data))
-        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
+        html = html.replace('<REPL_g_score_data/>', score_data)
+        html = html.replace('<REPL_g_score_list/>', score_list)
+#        html = html.replace('<REPL_g_score_data/>', json.dumps(score_data))
+#        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
         html = html.replace('<REPL_error_message/>', status_message)
         return Response(request, html, content_type="text/html")
 
@@ -2037,7 +2051,8 @@ if __name__=='__main__':
 
                             status_message = 'ERROR: Guitar Score save error [' + file_name + ']'
                             with open('SYNTH/MUSIC/' + file_name, 'w') as f:
-                                json.dump(js, f)
+#                                json.dump(js, f)
+                                f.write(guitar_score)
 
                             status_message = 'SUCCESS: Guitar Score uploaded [' + file_name + ']'
 
@@ -2064,7 +2079,7 @@ if __name__=='__main__':
 
         try:
             score_files = instrument_guitar.get_score_files(['NEW'])               
-            score_list = instrument_guitar.get_score_files_list()
+            score_list = instrument_guitar.get_score_files_list(get_as_text = True)
         
         except:
             score_list = ''
@@ -2072,7 +2087,8 @@ if __name__=='__main__':
 
         html = html.replace('<REPL_g_score_file_selected/>', 'NEW')
         html = html.replace('<REPL_g_score_file_options/>', WIFI_WebServer_class.html_options(score_files))
-        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
+        html = html.replace('<REPL_g_score_list/>', score_list)
+#        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
         
         return Response(request, html, content_type="text/html")
 
@@ -2103,13 +2119,16 @@ if __name__=='__main__':
                         score_list = decoded.strip().rstrip()
 
                 if len(score_list) > 0:
+                    # json format validation
                     status_message = 'ERROR: Guitar Scores List [JSON ERROR]'
                     js = json.loads(score_list)
                     print('GUITAR SCORES LIST JSON:', json.dumps(js))
 
                     status_message = 'ERROR: Guitar Scores List save error.'
                     with open('SYNTH/MUSIC/list.json', 'w') as f:
-                        json.dump(js, f)
+#                        json.dump(js, f)
+                        print('STRIPED:', score_list)
+                        f.write(score_list)
 
                     status_message = 'SUCCESS: Guitar Scores List uploaded.'
 
@@ -2124,11 +2143,11 @@ if __name__=='__main__':
 
         try:
             score_files = instrument_guitar.get_score_files(['NEW'])               
-            score_list = instrument_guitar.get_score_files_list()
+            score_list = instrument_guitar.get_score_files_list(get_as_text = True)
         
         except:
-            score_files = []
-            score_list = []
+            score_files = ['NEW']
+            score_list = ''
 
         html = wifi_webserver.get_web_contents()
         html = html.replace('<REPL_error_message/>', repl_error_message)
@@ -2138,7 +2157,8 @@ if __name__=='__main__':
 
         html = html.replace('<REPL_g_score_file_selected/>', 'NEW')
         html = html.replace('<REPL_g_score_file_options/>', WIFI_WebServer_class.html_options(score_files))
-        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
+        html = html.replace('<REPL_g_score_list/>', score_list)
+#        html = html.replace('<REPL_g_score_list/>', json.dumps(score_list))
         
         return Response(request, html, content_type="text/html")
 
