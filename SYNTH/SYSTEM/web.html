@@ -18,10 +18,18 @@
   <h1><a href="./">PICO Guitar/Drum</a></h1>
   <div><REPL_error_message/></div>
 
+  <h3 id="TITLE_Change_Instrument">Change Instrument</h3>
+  <form action="/change_instrument" method="post">
+    <div>
+      <label for="g_instrument_select">Instrument</label> <select name="SELECTED_INSTRUMENT" id="g_instrument_select"><REPL_g_instruments_list/></select>
+      <input type="submit" value="CHANGE" />
+    </div>
+  </form>
+
   <h3 id="TITLE_Guitar_Score_Upload">Guitar Score Upload</h3>
   <form action="/download_guitar_score" method="post">
     <div>
-      <label for="g_score_file_select">Select File</label> <select name="SELECTED_SCORE" id="g_score_file_select" selected="<REPL_g_score_file_selected/>"><REPL_g_score_file_options/></select>
+      <label for="g_score_file_select">Select File</label> <select name="SELECTED_SCORE" id="g_score_file_select"><REPL_g_score_file_options/></select>
       <input type="submit" value="DOWNLOAD" />
     </div>
   </form>
@@ -47,4 +55,3 @@
   </form>
 </body>
 </html>
-
