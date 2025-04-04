@@ -1,10 +1,10 @@
-#########################################################################
-# USB MIDI Instrument with Raspberry Pi PICO W (USB DEVICE)
+##########################################################################
+# USB MIDI Guitar and Drum Controler with Raspberry Pi PICO2 (USB DEVICE)
 # FUNCTION:
-#   MIDI-OUT to the built-in USB port on PICO W
+#   A MIDI Instrument like guitar strings and drum pads.
 # HARDWARE:
-#   CONTROLER  : Raspberry Pi PICO W.
-#                On board USB works as USB-MIDI device.
+#   CONTROLER  : Raspberry Pi PICO2/2W.
+#                On board USB works as a USB-MIDI device.
 #   OLED       : SSD1306 (128x64) as a display.
 #
 # PROGRAM: circuitpython (V9.2.1)
@@ -79,7 +79,9 @@
 #            Write json files as edited text format in web responses.
 #     2.0.2: 03/18/2025
 #            Instrument change via web.
-#########################################################################
+#     2.1.0: 04/04/2025
+#            UI is refreshed for new container.
+##########################################################################
 
 import asyncio
 import keypad
@@ -438,6 +440,9 @@ class ADC_Device_class:
         velo_factor = self.velocity_curve()
         for string in list(range(8)):
             voltage_raw = self.get_voltage(string)
+#            if string == 0:
+#                print('VOL=', voltage_raw)
+
 #            voltage = voltage_raw * (voltage_raw/3.55) * (voltage_raw/3.55) / velo_factor * 1000000.0
             voltage = voltage_raw * (voltage_raw/velo_factor) * (voltage_raw/velo_factor) * 100000.0
             if voltage > 5000.0:
@@ -946,13 +951,13 @@ class Guitar_class:
 #        print('DRUMS: ', self._drum_insts)
 
         # Device aliases for play mode
-        input_device.device_alias('GUITAR_CHORD_BANK', 'BUTTON_1')		# Chord set bank
-        input_device.device_alias('GUITAR_CHORD1', 'BUTTON_2')
-        input_device.device_alias('GUITAR_CHORD2', 'BUTTON_3')
-        input_device.device_alias('GUITAR_CHORD3', 'BUTTON_4')
-        input_device.device_alias('GUITAR_CHORD4', 'BUTTON_5')
-        input_device.device_alias('GUITAR_CHORD5', 'BUTTON_6')
-        input_device.device_alias('GUITAR_CHORD6', 'BUTTON_7')
+        input_device.device_alias('GUITAR_CHORD_BANK', 'BUTTON_7')		# Chord set bank
+        input_device.device_alias('GUITAR_CHORD1', 'BUTTON_1')
+        input_device.device_alias('GUITAR_CHORD2', 'BUTTON_2')
+        input_device.device_alias('GUITAR_CHORD3', 'BUTTON_3')
+        input_device.device_alias('GUITAR_CHORD4', 'BUTTON_4')
+        input_device.device_alias('GUITAR_CHORD5', 'BUTTON_5')
+        input_device.device_alias('GUITAR_CHORD6', 'BUTTON_6')
 
         # Device aliases for settings mode
         input_device.device_alias('GUITAR_BUTTON',     'BUTTON_1')
@@ -963,29 +968,30 @@ class Guitar_class:
         input_device.device_alias('GUITAR_OCTAVE',     'BUTTON_6')
         input_device.device_alias('GUITAR_CHORD_FILE', 'BUTTON_7')
 
-        # Device aliases for config mode
-        input_device.device_alias('GUITAR_BASE_VOLUME',      'BUTTON_2')
-        input_device.device_alias('GUITAR_VELOCITY_CURVE',   'BUTTON_3')
-        input_device.device_alias('GUITAR_PITCH_BEND_RANGE', 'BUTTON_4')
-        input_device.device_alias('GUITAR_CHORUS_LEVEL',     'BUTTON_5')
-        input_device.device_alias('GUITAR_CHORUS_FEEDBACK',  'BUTTON_6')
-        input_device.device_alias('GUITAR_AFTER_TOUCH',      'BUTTON_7')
+        # Device aliases for config mode1
+        input_device.device_alias('GUITAR_BASE_VOLUME',      'BUTTON_1')
+        input_device.device_alias('GUITAR_VELOCITY_CURVE',   'BUTTON_2')
+        input_device.device_alias('GUITAR_PITCH_BEND_RANGE', 'BUTTON_3')
+        input_device.device_alias('GUITAR_CHORUS_LEVEL',     'BUTTON_4')
+        input_device.device_alias('GUITAR_CHORUS_FEEDBACK',  'BUTTON_5')
+        input_device.device_alias('GUITAR_AFTER_TOUCH',      'BUTTON_6')
 
-        input_device.device_alias('GUITAR_MIDI_CHANNEL',     'BUTTON_2')
-        input_device.device_alias('GUITAR_CAPOTASTO',        'BUTTON_3')
-        input_device.device_alias('GUITAR_INSTRUMENT',       'BUTTON_4')
-        input_device.device_alias('GUITAR_DRUM_SET',         'BUTTON_5')
-        input_device.device_alias('GUITAR_DRUM_FILE',        'BUTTON_6')
-        input_device.device_alias('GUITAR_DRUM_SELECT',      'BUTTON_7')
-        input_device.device_alias('GUITAR_DRUM_NOTE',        'BUTTON_1')
+        # Device aliases for config mode2
+        input_device.device_alias('GUITAR_MIDI_CHANNEL',     'BUTTON_1')
+        input_device.device_alias('GUITAR_CAPOTASTO',        'BUTTON_2')
+        input_device.device_alias('GUITAR_INSTRUMENT',       'BUTTON_3')
+        input_device.device_alias('GUITAR_DRUM_SET',         'BUTTON_4')
+        input_device.device_alias('GUITAR_DRUM_FILE',        'BUTTON_5')
+        input_device.device_alias('GUITAR_DRUM_SELECT',      'BUTTON_6')
+        input_device.device_alias('GUITAR_DRUM_NOTE',        'BUTTON_7')
 
         # Device aliases for music mode
-        input_device.device_alias('GUITAR_CHORD_NEXT', 'BUTTON_1')
-        input_device.device_alias('GUITAR_MUSIC_PREV', 'BUTTON_2')
-        input_device.device_alias('GUITAR_MUSIC_NEXT', 'BUTTON_3')
-        input_device.device_alias('GUITAR_CHORD_PREV', 'BUTTON_5')
-        input_device.device_alias('GUITAR_CHORD_TOP',  'BUTTON_6')
-        input_device.device_alias('GUITAR_CHORD_LAST', 'BUTTON_7')
+        input_device.device_alias('GUITAR_CHORD_NEXT', 'BUTTON_7')
+        input_device.device_alias('GUITAR_MUSIC_PREV', 'BUTTON_1')
+        input_device.device_alias('GUITAR_MUSIC_NEXT', 'BUTTON_2')
+        input_device.device_alias('GUITAR_CHORD_PREV', 'BUTTON_4')
+        input_device.device_alias('GUITAR_CHORD_TOP',  'BUTTON_5')
+        input_device.device_alias('GUITAR_CHORD_LAST', 'BUTTON_6')
 
     def setup(self):
         display.fill(0)
@@ -1907,8 +1913,10 @@ def setup():
         device_oled = adafruit_ssd1306.SSD1306_I2C(display.width(), display.height(), display.i2c())
         display.init_device(device_oled)
         display.fill(1)
-        display.text('PicoGuitar', 5, 15, 0, 2)
-        display.text('(C) 2025 S.Ohira', 15, 35, 0)
+        display.text('PicoGuitar', 5,  0, 0, 2)
+        display.text('    &     ', 5, 17, 0, 2)
+        display.text('  Drums   ', 5, 34, 0, 2)
+        display.text('(C) 2025 S.Ohira', 15, 53, 0)
         display.show()
         
     except:
@@ -2287,9 +2295,4 @@ if __name__=='__main__':
     #####################################################
     # END
     #####################################################
-
-
-
-
-
 
